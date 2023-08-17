@@ -1,12 +1,11 @@
-from fastapi import FastAPI, Request, status
+from fastapi import Depends, FastAPI, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from redis import asyncio as aioredis
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
-from instagrapi.exceptions import UserNotFound
 
-from dependencies import get_config, get_instagram_client
+from dependencies import get_config, UserNotFound
 from routers import instagram
 
 
@@ -32,4 +31,4 @@ async def startup_event():
     app.debug = DEBUG
     redis = aioredis.from_url(url=REDIS_URL, encoding="utf8", decode_responses=True)
     FastAPICache.init(backend=RedisBackend(redis=redis), prefix="fastapi-cache")
-    await get_instagram_client()
+    Depends
