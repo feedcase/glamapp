@@ -3,7 +3,7 @@ from selenium import webdriver
 
 from dependencies import InstagramLinksModel, InstagramMediaTypesSelectors, get_profile_media_urls, create_driver
 
-router = APIRouter()
+router = APIRouter(tags=["instagram"])
 
 
 @router.get(
