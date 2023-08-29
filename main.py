@@ -24,6 +24,7 @@ app.add_middleware(
 )
 
 
+
 @app.exception_handler(UserNotFound)
 def inst_user_not_found_handler(request: Request, exc: UserNotFound):
     return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST,
