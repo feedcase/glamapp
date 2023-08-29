@@ -37,12 +37,14 @@ class UserNotFound(Exception):
 
 
 class AppSettings(BaseSettings):
+    """App Settings"""
     DEBUG: bool = False
     ENVIRONMENT: str = "local"
     INST_USERNAME: str
     INST_PASSWORD: str
     REDIS_HOST: str
     REDIS_PORT: int
+    CORS_ORIGIN: str
 
 
 class InstagramLinksModel(BaseModel):
