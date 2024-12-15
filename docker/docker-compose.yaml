@@ -1,18 +1,42 @@
 version: "3.9"
 
 services:
-  redis-cache:
-    image: redis:alpine
-    hostname: redis-cache
-    container_name: redis-cache
-    restart: on-failure
+  postgres:
+    image: postgres:latest
+    container_name: postgres_fast_api
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+      PGDATA: /var/lib/postgresql/data/pgdata
     ports:
-      - "6379:6379"
-    command: redis-server
+      - "5433:5432"
     volumes:
-      - cache:/data
-    networks:
-      - fastapi
+      - pgdata:/var/lib/postgresql/data/pgdata
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    command: >
+      postgres -c max_connections=1000
+               -c shared_buffers=256MB
+               -c effective_cache_size=768MB
+               -c maintenance_work_mem=64MB
+               -c checkpoint_completion_target=0.7
+               -c wal_buffers=16MB
+               -c default_statistics_target=100
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres_user -d postgres_db" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+    tty: true
+    stdin_open: true
 
   fastapi_service:
     build:
@@ -24,6 +48,22 @@ services:
     command: ["/fastapi_service/build.sh"]
     ports:
       - "8000:8000"
+    environment:
+      DEBUG: ${DEBUG}
+      ENVIRONMENT: ${ENVIRONMENT}
+      INST_USERNAME: ${INST_USERNAME}
+      INST_PASSWORD: ${INST_PASSWORD}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      SELENOID_HOST: ${SELENOID_HOST}
+      SELENOID_PORT: ${SELENOID_PORT}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      ACCEPTED_USERS: ${ACCEPTED_USERS}
     env_file:
       - ../.env
     volumes:
@@ -33,9 +73,28 @@ services:
     networks:
       - fastapi
 
-volumes:
+  selenoid:
+    image: selenium/standalone-chrome:latest
+    ports:
+      - "50001:4444"
 
+  redis-cache:
+    image: redis:alpine
+    hostname: redis-cache
+    container_name: redis-cache
+    restart: on-failure
+    ports:
+      - "6377:6379"
+    command: redis-server
+    volumes:
+      - cache:/data
+    networks:
+      - fastapi
+
+volumes:
   cache:
+    driver: local
+  pgdata:
     driver: local
 
 networks:
